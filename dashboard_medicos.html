@@ -21,7 +21,21 @@ h1{font-size:1.5rem;margin:0 0 2px}
 .kpi span{color:var(--mut);font-size:.8rem}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
 h2{font-size:1rem;margin:0 0 12px}
-.row{display:grid;grid-template-columns:minmax(110px,230px) 1fr 28px;gap:10px;align-items:center;padding:5px 0;cursor:pointer;font-size:.85rem}
+.row{display:grid;grid-template-columns:minmax(110px,230px) 1fr 28px;gap:10px;align-items:center;padding:8px 0;cursor:pointer;font-size:.85rem;min-height:44px}
+.item{border-bottom:1px solid var(--line)}
+.det{padding:2px 0 12px;font-size:.85rem;color:var(--mut)}
+.det ul{margin:4px 0 0;padding-left:18px;color:var(--ink)}
+@media(max-width:600px){
+main{padding:14px 12px 32px}
+h1{font-size:1.3rem}
+.kpi b{font-size:1.4rem}
+.card{padding:12px}
+.row{grid-template-columns:1fr 32px;gap:4px 8px;font-size:.9rem}
+.name{white-space:normal;grid-column:1}
+.num{grid-column:2;grid-row:1}
+.track{grid-column:1 / span 2;grid-row:2}
+th,td{padding:7px 4px;font-size:.8rem}
+}
 .row:hover .name{text-decoration:underline}
 .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .track{background:var(--track);border-radius:5px;height:16px;overflow:hidden}
@@ -59,21 +73,15 @@ th{color:var(--mut);font-weight:600;cursor:pointer}
   <h2>Ranking de médicos</h2>
   <div class="ctl">
     <label>Objetivo por médico: <input type="number" id="goal" min="1" value="2"></label>
-    <span>Rojo = por debajo del objetivo · Amarillo = líder</span>
+    <span>Rojo = por debajo del objetivo · Amarillo = líder · Toca un médico para ver sus clientes</span>
   </div>
   <div id="bars"></div>
 </section>
 
-<div class="grid2">
-  <section class="card">
-    <h2>Distribución: médicos según nº de ventas</h2>
-    <div class="dist" id="dist"></div>
-  </section>
-  <section class="card">
-    <h2>Detalle del médico</h2>
-    <div class="detail" id="detail"><span class="empty">Pulsa un médico del ranking para ver sus clientes.</span></div>
-  </section>
-</div>
+<section class="card">
+  <h2>Distribución: médicos según nº de ventas</h2>
+  <div class="dist" id="dist"></div>
+</section>
 
 <section class="card">
   <h2>Tabla completa</h2>
@@ -128,10 +136,10 @@ function kpis(){
 function bars(){
   $('bars').innerHTML=D.map((d,i)=>{
     const cls=d.v<goal?'low':(d.v===max?'top':'');
-    return `<div class="row" data-i="${i}" tabindex="0" role="button"><span class="name" title="${d.n}">${d.n}</span><div class="track"><div class="fill ${cls}" style="width:${d.v/max*100}%"></div></div><span class="num">${d.v}</span></div>`;
+    return `<div class="item"><div class="row" data-i="${i}" tabindex="0" role="button"><span class="name">${d.n}</span><div class="track"><div class="fill ${cls}" style="width:${d.v/max*100}%"></div></div><span class="num">${d.v}</span></div><div class="det" id="det${i}" hidden>${pct(d.v/T)} del total<ul>${d.c.map(c=>`<li>${c}</li>`).join('')}</ul></div></div>`;
   }).join('');
   document.querySelectorAll('.row').forEach(r=>{
-    const f=()=>show(+r.dataset.i);
+    const f=()=>{const e=$('det'+r.dataset.i);e.hidden=!e.hidden};
     r.onclick=f;r.onkeydown=e=>{if(e.key==='Enter')f()};
   });
 }
@@ -139,10 +147,6 @@ function dist(){
   const m={};D.forEach(d=>m[d.v]=(m[d.v]||0)+1);
   const keys=Object.keys(m).map(Number).sort((a,b)=>a-b), mm=Math.max(...Object.values(m));
   $('dist').innerHTML=keys.map(k=>`<div class="dcol"><b>${m[k]}</b><div class="dbar" style="height:${m[k]/mm*100}px"></div><span>${k} venta${k>1?'s':''}</span></div>`).join('');
-}
-function show(i){
-  const d=D[i];
-  $('detail').innerHTML=`<b>${d.n}</b><br>${d.v} ventas · ${pct(d.v/T)} del total<ul>${d.c.map(c=>`<li>${c}</li>`).join('')}</ul>`;
 }
 function table(){
   const q=$('q').value.toLowerCase();
