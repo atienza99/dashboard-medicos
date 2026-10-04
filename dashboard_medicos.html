@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dashboard de ventas por médico</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f7f6;--card:#fff;--ink:#17302b;--mut:#5d716c;--line:#dde5e2;--acc:#0f7b6c;--acc2:#e0a526;--low:#c8553d;--track:#e8efed}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a18;--card:#16241f;--ink:#e6f0ed;--mut:#93aaa4;--line:#26382f;--acc:#3fc1ac;--acc2:#e8b84a;--low:#e57a62;--track:#233630}}
+:root[data-theme="dark"]{--bg:#0f1a18;--card:#16241f;--ink:#e6f0ed;--mut:#93aaa4;--line:#26382f;--acc:#3fc1ac;--acc2:#e8b84a;--low:#e57a62;--track:#233630}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;line-height:1.45}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;margin:0 0 2px}
+.sub{color:var(--mut);margin:0 0 18px;font-size:.9rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.kpi b{display:block;font-size:1.7rem;line-height:1.1}
+.kpi span{color:var(--mut);font-size:.8rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+h2{font-size:1rem;margin:0 0 12px}
+.row{display:grid;grid-template-columns:minmax(110px,230px) 1fr 28px;gap:10px;align-items:center;padding:5px 0;cursor:pointer;font-size:.85rem}
+.row:hover .name{text-decoration:underline}
+.name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track{background:var(--track);border-radius:5px;height:16px;overflow:hidden}
+.fill{height:100%;background:var(--acc);border-radius:5px}
+.fill.low{background:var(--low)}
+.fill.top{background:var(--acc2)}
+.num{text-align:right;font-weight:600}
+.ctl{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:12px;font-size:.85rem;color:var(--mut)}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+input[type=number]{width:64px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}}
+.dist{display:flex;align-items:flex-end;gap:14px;height:150px;padding-top:8px}
+.dcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:.8rem}
+.dbar{width:100%;max-width:56px;background:var(--acc);border-radius:5px 5px 0 0}
+.detail{font-size:.85rem}
+.detail ul{margin:6px 0 0;padding-left:18px}
+.empty{color:var(--mut)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-weight:600;cursor:pointer}
+.tag{padding:2px 8px;border-radius:99px;font-size:.75rem;background:var(--track)}
+.tag.ok{color:var(--acc)}.tag.no{color:var(--low)}
+</style>
+</head>
+<body>
+<main>
+<h1>Ventas por médico</h1>
+<p class="sub">Septiembre · cada venta equivale a un paciente/cliente derivado</p>
+
+<section class="kpis" id="kpis"></section>
+
+<section class="card">
+  <h2>Ranking de médicos</h2>
+  <div class="ctl">
+    <label>Objetivo por médico: <input type="number" id="goal" min="1" value="2"></label>
+    <span>Rojo = por debajo del objetivo · Amarillo = líder</span>
+  </div>
+  <div id="bars"></div>
+</section>
+
+<div class="grid2">
+  <section class="card">
+    <h2>Distribución: médicos según nº de ventas</h2>
+    <div class="dist" id="dist"></div>
+  </section>
+  <section class="card">
+    <h2>Detalle del médico</h2>
+    <div class="detail" id="detail"><span class="empty">Pulsa un médico del ranking para ver sus clientes.</span></div>
+  </section>
+</div>
+
+<section class="card">
+  <h2>Tabla completa</h2>
+  <div class="ctl"><input type="search" id="q" placeholder="Buscar médico o cliente…" aria-label="Buscar"></div>
+  <div class="scroll"><table><thead><tr><th>Médico</th><th>Ventas</th><th>% del total</th><th>Objetivo</th></tr></thead><tbody id="tb"></tbody></table></div>
+</section>
+</main>
+
+<script>
+const RAW={
+"Alvarado Rincón, Enrique":["Cristina Torres Planells"],
+"Antonelli, Romina":["David Ronquillo Martínez"],
+"Bernal Vargas, Juan":["Nuria Periago Utiller","Santiago Terán Lafuente"],
+"Dubois, Claribel":["Cesc Molins Ortega"],
+"Fernández Reinales, Álvaro José":["Miquel Vidal i Pinyol","Isabella Panayiotou"],
+"García Bordes, Luis":["Fernando Ribelles Cañas","Yao Luo Wang","María Ángeles Zúñiga Montoya","Cecilia Abelló Pamies","Carles Viladevall Passola"],
+"Garros Carol, Rafael":["Roberta Hadler","Alexandra Asta Valero"],
+"Giron, Sergio":["Judy Nguyes"],
+"González Gutiérrez, Fernando":["Silvia Angrill Ribas"],
+"Jolonch, José María":["Helena Meuleman"],
+"Morell Luque, Juan Manuel":["Daniel Rodríguez Laborda","Louis Minne"],
+"Nadal García, Fernando":["Antoniza González Flores"],
+"Olivé Viñas, Sergi":["Miguel Martín García","Valentina Rueda Celis"],
+"Ortega, Juan Pablo":["Florencia Mourella Hmad"],
+"Pujol Seguer, Jaume":["Helen Baynes","Nicole Estefanía Mera López","Pau Callejas Tobar"],
+"Rodríguez Socorro, Jesús Alberto":["Marcial Robles Sanchis","Saryuris Medrano Urbina","Fabiola Meignen Martínez","Inez Camacho Barcia"],
+"Sala Barat, Esther":["Santiago Toneu Garriga"],
+"Sánchez García, Josefina":["María Polonio López"],
+"Steinbacher, Gilbert":["Juan Arenas Navarrete","Araceli Serrano Expósito"]
+};
+const D=Object.entries(RAW).map(([n,c])=>({n,c,v:c.length})).sort((a,b)=>b.v-a.v||a.n.localeCompare(b.n));
+const T=D.reduce((s,d)=>s+d.v,0), max=D[0].v;
+const $=id=>document.getElementById(id);
+const pct=x=>(x*100).toFixed(1).replace('.',',')+'%';
+let goal=2;
+
+function kpis(){
+  const top3=D.slice(0,3).reduce((s,d)=>s+d.v,0);
+  const ones=D.filter(d=>d.v===1).length;
+  const ok=D.filter(d=>d.v>=goal).length;
+  const k=[
+    [T,'Ventas totales'],
+    [D.length,'Médicos activos'],
+    [(T/D.length).toFixed(2).replace('.',','),'Media por médico'],
+    [D[0].v,'Máximo: '+D[0].n.split(',')[0]],
+    [pct(top3/T),'Peso de los 3 primeros'],
+    [pct(ones/D.length),'Médicos con solo 1 venta ('+ones+')'],
+    [ok+' / '+D.length,'Médicos que alcanzan el objetivo']
+  ];
+  $('kpis').innerHTML=k.map(([a,b])=>`<div class="kpi"><b>${a}</b><span>${b}</span></div>`).join('');
+}
+function bars(){
+  $('bars').innerHTML=D.map((d,i)=>{
+    const cls=d.v<goal?'low':(d.v===max?'top':'');
+    return `<div class="row" data-i="${i}" tabindex="0" role="button"><span class="name" title="${d.n}">${d.n}</span><div class="track"><div class="fill ${cls}" style="width:${d.v/max*100}%"></div></div><span class="num">${d.v}</span></div>`;
+  }).join('');
+  document.querySelectorAll('.row').forEach(r=>{
+    const f=()=>show(+r.dataset.i);
+    r.onclick=f;r.onkeydown=e=>{if(e.key==='Enter')f()};
+  });
+}
+function dist(){
+  const m={};D.forEach(d=>m[d.v]=(m[d.v]||0)+1);
+  const keys=Object.keys(m).map(Number).sort((a,b)=>a-b), mm=Math.max(...Object.values(m));
+  $('dist').innerHTML=keys.map(k=>`<div class="dcol"><b>${m[k]}</b><div class="dbar" style="height:${m[k]/mm*100}px"></div><span>${k} venta${k>1?'s':''}</span></div>`).join('');
+}
+function show(i){
+  const d=D[i];
+  $('detail').innerHTML=`<b>${d.n}</b><br>${d.v} ventas · ${pct(d.v/T)} del total<ul>${d.c.map(c=>`<li>${c}</li>`).join('')}</ul>`;
+}
+function table(){
+  const q=$('q').value.toLowerCase();
+  $('tb').innerHTML=D.filter(d=>(d.n+d.c.join(' ')).toLowerCase().includes(q)).map(d=>
+    `<tr><td>${d.n}</td><td>${d.v}</td><td>${pct(d.v/T)}</td><td><span class="tag ${d.v>=goal?'ok':'no'}">${d.v>=goal?'Cumple':'Falta '+(goal-d.v)}</span></td></tr>`).join('')||'<tr><td colspan="4" class="empty">Sin resultados.</td></tr>';
+}
+function all(){kpis();bars();dist();table()}
+$('goal').oninput=e=>{goal=Math.max(1,+e.target.value||1);all()};
+$('q').oninput=table;
+all();
+</script>
+</body>
+</html>
