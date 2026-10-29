@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dashboard de ventas por médico</title>
+<title>IANES · Ventas por médico</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 --bg:#f5f7f6;--card:#fff;--ink:#17302b;--mut:#5d716c;--line:#dde5e2;--acc:#0f7b6c;--acc2:#e0a526;--low:#c8553d;--track:#e8efed}
@@ -44,7 +44,7 @@ th,td{padding:7px 4px;font-size:.8rem}
 .fill.top{background:var(--acc2)}
 .num{text-align:right;font-weight:600}
 .ctl{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:12px;font-size:.85rem;color:var(--mut)}
-input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
 input[type=number]{width:64px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:700px){.grid2{grid-template-columns:1fr}}
@@ -64,8 +64,9 @@ th{color:var(--mut);font-weight:600;cursor:pointer}
 </head>
 <body>
 <main>
-<h1>Ventas por médico</h1>
-<p class="sub">Septiembre · cada venta equivale a un paciente/cliente derivado</p>
+<h1>IANES</h1>
+<p class="sub">Control de ventas por médico · cada venta equivale a un cliente derivado</p>
+<div class="ctl"><label>Mes: <select id="mes"></select></label></div>
 
 <section class="kpis" id="kpis"></section>
 
@@ -91,51 +92,37 @@ th{color:var(--mut);font-weight:600;cursor:pointer}
 </main>
 
 <script>
-const RAW={
-"Alvarado Rincón, Enrique":["Cristina Torres Planells"],
-"Antonelli, Romina":["David Ronquillo Martínez"],
-"Bernal Vargas, Juan":["Nuria Periago Utiller","Santiago Terán Lafuente"],
-"Dubois, Claribel":["Cesc Molins Ortega"],
-"Fernández Reinales, Álvaro José":["Miquel Vidal i Pinyol","Isabella Panayiotou"],
-"García Bordes, Luis":["Fernando Ribelles Cañas","Yao Luo Wang","María Ángeles Zúñiga Montoya","Cecilia Abelló Pamies","Carles Viladevall Passola"],
-"Garros Carol, Rafael":["Roberta Hadler","Alexandra Asta Valero"],
-"Giron, Sergio":["Judy Nguyes"],
-"González Gutiérrez, Fernando":["Silvia Angrill Ribas"],
-"Jolonch, José María":["Helena Meuleman"],
-"Morell Luque, Juan Manuel":["Daniel Rodríguez Laborda","Louis Minne"],
-"Nadal García, Fernando":["Antoniza González Flores"],
-"Olivé Viñas, Sergi":["Miguel Martín García","Valentina Rueda Celis"],
-"Ortega, Juan Pablo":["Florencia Mourella Hmad"],
-"Pujol Seguer, Jaume":["Helen Baynes","Nicole Estefanía Mera López","Pau Callejas Tobar"],
-"Rodríguez Socorro, Jesús Alberto":["Marcial Robles Sanchis","Saryuris Medrano Urbina","Fabiola Meignen Martínez","Inez Camacho Barcia"],
-"Sala Barat, Esther":["Santiago Toneu Garriga"],
-"Sánchez García, Josefina":["María Polonio López"],
-"Steinbacher, Gilbert":["Juan Arenas Navarrete","Araceli Serrano Expósito"]
-};
-const D=Object.entries(RAW).map(([n,c])=>({n,c,v:c.length})).sort((a,b)=>b.v-a.v||a.n.localeCompare(b.n));
-const T=D.reduce((s,d)=>s+d.v,0), max=D[0].v;
+const MONTHS={"Septiembre": {"Alvarado Rincón, Enrique": ["Cristina Torres Planells"], "Antonelli, Romina": ["David Ronquillo Martínez"], "Bernal Vargas, Juan": ["Nuria Periago Utiller", "Santiago Terán Lafuente"], "Dubois, Claribel": ["Cesc Molins Ortega"], "Fernández Reinales, Álvaro José": ["Miquel Vidal i Pinyol", "Isabella Panayiotou"], "García Bordes, Luis": ["Fernando Ribelles Cañas", "Yao Luo Wang", "María Ángeles Zúñiga Montoya", "Cecilia Abelló Pamies", "Carles Viladevall Passola"], "Garros Carol, Rafael": ["Roberta Hadler", "Alexandra Asta Valero"], "Giron, Sergio": ["Judy Nguyes"], "González Gutiérrez, Fernando": ["Silvia Angrill Ribas"], "Jolonch, José María": ["Helena Meuleman"], "Morell Luque, Juan Manuel": ["Daniel Rodríguez Laborda", "Louis Minne"], "Nadal García, Fernando": ["Antoniza González Flores"], "Olivé Viñas, Sergi": ["Miguel Martín García", "Valentina Rueda Celis"], "Ortega, Juan Pablo": ["Florencia Mourella Hmad"], "Pujol Seguer, Jaume": ["Helen Baynes", "Nicole Estefanía Mera López", "Pau Callejas Tobar"], "Rodríguez Socorro, Jesús Alberto": ["Marcial Robles Sanchis", "Saryuris Medrano Urbina", "Fabiola Meignen Martínez", "Inez Camacho Barcia"], "Sala Barat, Esther": ["Santiago Toneu Garriga"], "Sánchez García, Josefina": ["María Polonio López"], "Steinbacher, Gilbert": ["Juan Arenas Navarrete", "Araceli Serrano Expósito"]}, "Octubre": {"Alvarado Rincón, Enrique": ["Matos Tastrojo, Teresa"], "Antonelli, Romina": ["Roman Sanchez, Julio", "Grussu, Francesco", "Ollola Elemida, Emma"], "Bernal Vargas, Juan": ["Barcelo Pelleja, Merce", "Siuro Bessio, Ferran"], "Castaldini, Guido": ["Gonzalez Tejera, Yolanda"], "Dubois, Claribel": ["Jimenez Andujar, Maria Jose"], "Fernández Reinales, Álvaro José": ["Bokoni, Giovana", "Garrido Moliner, Daniel", "Costas Perez, Elena", "Delgado Ruiz, Carolina", "Alvarez Alvarez, Merche"], "Flores, Berly": ["Perez Tomas, Clara", "Alfaro del Vale, Paloma", "Molina Romero, Salvador", "Palomar Badorrey, Imma"], "García Bordes, Luis": ["Morral Baeza, Carlota", "Bernats Mullor, Rafael", "Marin Sancho, Antoni", "Galobar Prones, Joan"], "Garcia Diaz, Miguel Angel": ["Gonzalez Romero, Ignacio", "Genin, Maxime", "Riera Puertas, Enric"], "Garros Carol, Rafael": ["Fernandez Sanchez, Hermelinda", "Arranz Griñan, Assuncion", "Mateos Sanchez, Iker"], "Giron, Sergio": ["Paris Batet, Remei"], "Krämer, Robert": ["del Hoo Olaya, Isabel"], "Morell Luque, Juan Manuel": ["Clols Vallve, Claudia", "Cabini Rosero, Claudia", "Steiner Elias, Ana Carolina"], "Ortega, Juan Pablo": ["Soto Rosa, Ricardo", "Gonzalez Luque, Daniela", "Salas Casas, Victor", "Yin, Tianle", "Pitago Marabe, Marian", "del Arco Vallcorba, Jonathan", "Romero Ortin, Hector", "Bermudez Garcia, Manuel", "Pi Guerrero, Maria Gloria", "Zakur, Malina"], "Pujol Seguer, Jaume": ["Urbano Maya, David", "Abellan Arguella, Silvina"], "Rius Vilarrubia, Marta": ["Roviralta Murillo, Judit", "El Abidi, Khadija", "Ehlis Pirretas, Ignacio", "Martell, Cristian"], "Rodríguez Socorro, Jesús Alberto": ["Martin Vargas, Daniel"], "Steinbacher, Gilbert": ["Vilchez Fernandez, Daniel", "Li Samck, Johan", "Masdeu Gasco, Miquel", "Anell Mojer, Xavier", "Lambert, Manda"], "Yoldi, Beatriz": ["Bustamante Ramos, Cristian"]}};
+const ORDER=["Septiembre","Octubre"];
 const $=id=>document.getElementById(id);
 const pct=x=>(x*100).toFixed(1).replace('.',',')+'%';
-let goal=2;
+const fmt=x=>x.toFixed(2).replace('.',',');
+let D=[],T=0,max=0,goal=2,G=2,cur=ORDER[ORDER.length-1],prevT=null;
 
+function load(){
+  let src={};
+  if(cur==='Acumulado'){ORDER.forEach(k=>{for(const [n,c] of Object.entries(MONTHS[k]))(src[n]=src[n]||[]).push(...c)})}
+  else src=MONTHS[cur];
+  D=Object.entries(src).filter(([n,c])=>c.length).map(([n,c])=>({n,c,v:c.length})).sort((a,b)=>b.v-a.v||a.n.localeCompare(b.n));
+  T=D.reduce((s,d)=>s+d.v,0);max=D[0].v;
+  G=goal*(cur==='Acumulado'?ORDER.length:1);
+  const i=ORDER.indexOf(cur);
+  prevT=i>0?Object.values(MONTHS[ORDER[i-1]]).reduce((s,c)=>s+c.length,0):null;
+}
 function kpis(){
   const top3=D.slice(0,3).reduce((s,d)=>s+d.v,0);
   const ones=D.filter(d=>d.v===1).length;
-  const ok=D.filter(d=>d.v>=goal).length;
-  const k=[
-    [T,'Ventas totales'],
-    [D.length,'Médicos activos'],
-    [(T/D.length).toFixed(2).replace('.',','),'Media por médico'],
-    [D[0].v,'Máximo: '+D[0].n.split(',')[0]],
-    [pct(top3/T),'Peso de los 3 primeros'],
-    [pct(ones/D.length),'Médicos con solo 1 venta ('+ones+')'],
-    [ok+' / '+D.length,'Médicos que alcanzan el objetivo']
-  ];
+  const ok=D.filter(d=>d.v>=G).length;
+  const k=[[T,'Ventas totales']];
+  if(prevT!==null){const dl=T-prevT;k.push([(dl>=0?'+':'')+dl+' ('+(dl>=0?'+':'')+pct(dl/prevT)+')','Variación vs mes anterior ('+prevT+')'])}
+  k.push([D.length,'Médicos activos'],[fmt(T/D.length),'Media por médico'],[D[0].v,'Máximo: '+D[0].n.split(',')[0]],
+    [pct(top3/T),'Peso de los 3 primeros'],[pct(ones/D.length),'Médicos con solo '+(cur==='Acumulado'?'1 venta':'1 venta')+' ('+ones+')'],
+    [ok+' / '+D.length,'Médicos que alcanzan el objetivo ('+G+')']);
   $('kpis').innerHTML=k.map(([a,b])=>`<div class="kpi"><b>${a}</b><span>${b}</span></div>`).join('');
 }
 function bars(){
   $('bars').innerHTML=D.map((d,i)=>{
-    const cls=d.v<goal?'low':(d.v===max?'top':'');
+    const cls=d.v<G?'low':(d.v===max?'top':'');
     return `<div class="item"><div class="row" data-i="${i}" tabindex="0" role="button"><span class="name">${d.n}</span><div class="track"><div class="fill ${cls}" style="width:${d.v/max*100}%"></div></div><span class="num">${d.v}</span></div><div class="det" id="det${i}" hidden>${pct(d.v/T)} del total<ul>${d.c.map(c=>`<li>${c}</li>`).join('')}</ul></div></div>`;
   }).join('');
   document.querySelectorAll('.row').forEach(r=>{
@@ -145,15 +132,17 @@ function bars(){
 }
 function dist(){
   const m={};D.forEach(d=>m[d.v]=(m[d.v]||0)+1);
-  const keys=Object.keys(m).map(Number).sort((a,b)=>a-b), mm=Math.max(...Object.values(m));
+  const keys=Object.keys(m).map(Number).sort((a,b)=>a-b),mm=Math.max(...Object.values(m));
   $('dist').innerHTML=keys.map(k=>`<div class="dcol"><b>${m[k]}</b><div class="dbar" style="height:${m[k]/mm*100}px"></div><span>${k} venta${k>1?'s':''}</span></div>`).join('');
 }
 function table(){
   const q=$('q').value.toLowerCase();
   $('tb').innerHTML=D.filter(d=>(d.n+d.c.join(' ')).toLowerCase().includes(q)).map(d=>
-    `<tr><td>${d.n}</td><td>${d.v}</td><td>${pct(d.v/T)}</td><td><span class="tag ${d.v>=goal?'ok':'no'}">${d.v>=goal?'Cumple':'Falta '+(goal-d.v)}</span></td></tr>`).join('')||'<tr><td colspan="4" class="empty">Sin resultados.</td></tr>';
+    `<tr><td>${d.n}</td><td>${d.v}</td><td>${pct(d.v/T)}</td><td><span class="tag ${d.v>=G?'ok':'no'}">${d.v>=G?'Cumple':'Falta '+(G-d.v)}</span></td></tr>`).join('')||'<tr><td colspan="4" class="empty">Sin resultados.</td></tr>';
 }
-function all(){kpis();bars();dist();table()}
+function all(){load();kpis();bars();dist();table()}
+$('mes').innerHTML=ORDER.concat(['Acumulado']).map(m=>`<option${m===cur?' selected':''}>${m}</option>`).join('');
+$('mes').onchange=e=>{cur=e.target.value;all()};
 $('goal').oninput=e=>{goal=Math.max(1,+e.target.value||1);all()};
 $('q').oninput=table;
 all();
